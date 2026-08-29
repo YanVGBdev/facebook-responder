@@ -1,0 +1,60 @@
+name: build-windows
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+          check-latest: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          check-latest: true
+
+      # Instala o Wails CLI v2.9.2 (mesma versão validada localmente).
+      # O CLI é instalado em GOPATH/bin, que já está no PATH por padrão.
+      - name: Install Wails CLI
+        shell: pwsh
+        run: |
+          go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
+          wails version
+
+      # Valida o backend isoladamente (rápido; falha cedo se o Go quebrar).
+      - name: go vet
+        shell: pwsh
+        run: go vet ./...
+
+      - name: go test
+        shell: pwsh
+        run: go test ./...
+
+      # Build de produção. Sobe o .exe + frontend embedado como artifact.
+      # -clean garante que não herda cache podre entre runs.
+      - name: wails build
+        shell: pwsh
+        run: wails build -clean -platform windows/amd64
+
+      - name: Upload .exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: facebook-responder-windows-amd64
+          path: build/bin/facebook-responder.exe
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,8 @@
+build/bin
+node_modules
+frontend/dist
+data/config.json
+data/comments.json
+.gopath/
+.gocache/
+.gotmp/

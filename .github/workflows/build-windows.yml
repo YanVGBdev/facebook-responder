@@ -20,23 +20,37 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          check-latest: true
+          cache: true
+          cache-dependency-path: go.sum
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
-          check-latest: true
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
       # Instala o Wails CLI v2.9.2 (mesma versão validada localmente).
-      # O CLI é instalado em GOPATH/bin, que já está no PATH por padrão.
       - name: Install Wails CLI
         shell: pwsh
         run: |
           go install github.com/wailsapp/wails/v2/cmd/wails@v2.9.2
           wails version
 
-      # Valida o backend isoladamente (rápido; falha cedo se o Go quebrar).
+      # CRÍTICO: popula frontend/dist/ antes de qualquer comando Go.
+      # O `//go:embed all:frontend/dist` no main.go falha se o diretório
+      # não existir (e o .gitignore o exclui do repo). Rodar o build do
+      # Vite antes do go vet/test garante que o embed encontre arquivos.
+      - name: Build frontend
+        shell: pwsh
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend dist
+        shell: pwsh
+        working-directory: frontend
+        run: npm run build
+
       - name: go vet
         shell: pwsh
         run: go vet ./...
@@ -45,8 +59,7 @@ jobs:
         shell: pwsh
         run: go test ./...
 
-      # Build de produção. Sobe o .exe + frontend embedado como artifact.
-      # -clean garante que não herda cache podre entre runs.
+      # Build de produção. -clean garante que não herda cache podre.
       - name: wails build
         shell: pwsh
         run: wails build -clean -platform windows/amd64

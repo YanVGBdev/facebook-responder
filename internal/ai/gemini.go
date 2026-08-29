@@ -25,12 +25,13 @@ type GeminiClient struct {
 	APIBase  string // default: https://generativelanguage.googleapis.com/v1beta
 }
 
-// NewGemini cria um cliente pronto (modelo padrão: gemini-1.5-flash).
+// NewGemini cria um cliente pronto. O modelo padrão é gemini-2.5-flash
+// (a série 1.5 foi descontinuada em 2025).
 func NewGemini(apiKey string) *GeminiClient {
 	return &GeminiClient{
 		HTTP:    &http.Client{Timeout: 30 * time.Second},
 		APIKey:  apiKey,
-		Model:   "gemini-1.5-flash",
+		Model:   "gemini-2.5-flash",
 		APIBase: "https://generativelanguage.googleapis.com/v1beta",
 	}
 }

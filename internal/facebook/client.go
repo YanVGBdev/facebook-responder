@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -132,7 +133,14 @@ func doJSON(req *http.Request, hc *http.Client, out any) error {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode/100 != 2 {
-		return fmt.Errorf("graph %s %s -> %d", req.Method, req.URL.Path, resp.StatusCode)
+		// Lê o corpo do erro pra mostrar a mensagem real da Meta
+		// (em vez de só o status code). Limita a 512 chars pra não estourar o toast.
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
+		msg := strings.TrimSpace(string(body))
+		if msg == "" {
+			msg = "(sem corpo)"
+		}
+		return fmt.Errorf("graph %s %s -> %d: %s", req.Method, req.URL.Path, resp.StatusCode, msg)
 	}
 	if out == nil {
 		return nil

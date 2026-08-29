@@ -6,7 +6,7 @@ export function BuscarPosts(arg1:number,arg2:number):Promise<main.PostsListDTO>;
 
 export function EditarResposta(arg1:string,arg2:string,arg3:string):Promise<void>;
 
-export function EnviarResposta(arg1:string,arg2:string):Promise<main.CommentDTO>;
+export function EnviarResposta(arg1:string,arg2:string,arg3:string):Promise<main.CommentDTO>;
 
 export function GerarSugestoes(arg1:string):Promise<void>;
 

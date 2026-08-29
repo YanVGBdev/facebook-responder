@@ -119,18 +119,20 @@ async function renderComments(box, ctx, postID) {
     }
     if (ta && btnEnviar) {
       btnEnviar.addEventListener('click', async () => {
-        if (!confirm('Publicar esta resposta na Página do Facebook?')) return;
-        // Garante que a edição atual está salva antes de enviar.
-        if (ta.value !== (ta.dataset.original || '')) {
-          try { await ctx.api.EditarResposta(postID, cid, ta.value); } catch (e) {}
+        const texto = (ta.value || '').trim();
+        if (!texto) {
+          ctx.setStatus('Digite uma resposta ou gere uma sugestão antes de enviar.', true);
+          ta.focus();
+          return;
         }
+        if (!confirm(`Publicar esta resposta na Página do Facebook?\n\n"${texto}"`)) return;
         ctx.setStatus('Publicando…');
         try {
-          await ctx.api.EnviarResposta(postID, cid);
+          await ctx.api.EnviarResposta(postID, cid, texto);
           ctx.setStatus('✅ Publicado');
           await renderComments(box, ctx, postID);
         } catch (e) {
-          ctx.setStatus('Erro ao publicar: ' + e, true);
+          ctx.setStatus('Erro ao publicar: ' + (e?.message || e), true);
         }
       });
     }
@@ -152,10 +154,11 @@ function commentCard(c, postID, editavel) {
       ${editavel ? `
         <div class="col" style="margin-top:8px;">
           <label>Sua resposta (edite à vontade antes de enviar)</label>
-          <textarea data-original="${escapeAttr(resposta)}">${escapeText(resposta)}</textarea>
+          <textarea data-original="${escapeAttr(resposta)}" placeholder="Digite ou gere uma sugestão acima…">${escapeText(resposta)}</textarea>
           <div class="row">
             <button class="btn secondary salvar">💾 Salvar rascunho</button>
-            <button class="btn enviar" ${resposta ? '' : 'disabled'}>📤 Enviar para o Facebook</button>
+            <button class="btn enviar">📤 Enviar para o Facebook</button>
+            <span class="muted" style="font-size:12px;">(você pode digitar e enviar mesmo sem sugestão da IA)</span>
           </div>
         </div>
       ` : `

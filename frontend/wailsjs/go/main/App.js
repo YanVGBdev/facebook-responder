@@ -10,8 +10,8 @@ export function EditarResposta(arg1, arg2, arg3) {
   return window['go']['main']['App']['EditarResposta'](arg1, arg2, arg3);
 }
 
-export function EnviarResposta(arg1, arg2) {
-  return window['go']['main']['App']['EnviarResposta'](arg1, arg2);
+export function EnviarResposta(arg1, arg2, arg3) {
+  return window['go']['main']['App']['EnviarResposta'](arg1, arg2, arg3);
 }
 
 export function GerarSugestoes(arg1) {

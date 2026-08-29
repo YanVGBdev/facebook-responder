@@ -82,13 +82,15 @@ func (g *GraphClient) ListPosts(ctx context.Context, pageAccessToken string, lim
 	return out.Data, nil
 }
 
-// ListComments — GET /{post-id}/comments?fields=id,message,from,created_time
+// ListComments — GET /{post-id}/comments?fields=id,message,from{name,id},created_time
 func (g *GraphClient) ListComments(ctx context.Context, postID, pageAccessToken string, limit int) ([]FBComment, error) {
 	if limit <= 0 {
 		limit = 25
 	}
 	q := url.Values{}
-	q.Set("fields", "id,message,from,created_time")
+	// Pedimos from{name,id} explicitamente: a Meta às vezes devolve `from` vazio
+	// se o sub-campo não for solicitado, dependendo do escopo do token.
+	q.Set("fields", "id,message,from{name,id},created_time")
 	q.Set("limit", fmt.Sprintf("%d", limit))
 	q.Set("access_token", pageAccessToken)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, g.endpoint("/"+postID+"/comments"), nil)

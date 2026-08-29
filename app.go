@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -224,7 +225,9 @@ func (a *App) EditarResposta(postID, commentID, texto string) error {
 }
 
 // EnviarResposta publica via Graph API e marca como respondido.
-func (a *App) EnviarResposta(postID, commentID string) (CommentDTO, error) {
+// O parâmetro texto (opcional) sobrescreve a resposta salva no rascunho
+// — útil quando o usuário edita no textarea e clica Enviar direto.
+func (a *App) EnviarResposta(postID, commentID, texto string) (CommentDTO, error) {
 	cfg := a.cfg.Get()
 	snap := a.store.Snapshot()
 	p, ok := snap.Posts[postID]
@@ -238,12 +241,16 @@ func (a *App) EnviarResposta(postID, commentID string) (CommentDTO, error) {
 	if c.Status == storage.StatusRespondido {
 		return CommentDTO{}, fmt.Errorf("comentário já respondido")
 	}
-	final := c.RespostaFinal
+	// Prioridade: texto vindo do request (textarea) > rascunho salvo > sugestão da IA.
+	final := strings.TrimSpace(texto)
+	if final == "" {
+		final = c.RespostaFinal
+	}
 	if final == "" {
 		final = c.SugestaoIA
 	}
 	if final == "" {
-		return CommentDTO{}, fmt.Errorf("nenhuma resposta definida")
+		return CommentDTO{}, fmt.Errorf("digite uma resposta antes de enviar (ou gere uma sugestão)")
 	}
 	if !cfg.UsarMock && cfg.PageAccessToken == "" {
 		return CommentDTO{}, fmt.Errorf("Page Access Token ausente (ou ative o modo mock)")
